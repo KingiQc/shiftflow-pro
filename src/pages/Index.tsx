@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Icon } from "@iconify/react";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay, parseISO } from "date-fns";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import AppLayout from "@/components/AppLayout";
@@ -12,6 +12,8 @@ import AddShiftDialog from "@/components/AddShiftDialog";
 import EarningsChart from "@/components/EarningsChart";
 import ExpensePieChart from "@/components/ExpensePieChart";
 import ForecastCard from "@/components/ForecastCard";
+import BalanceTrendChart from "@/components/BalanceTrendChart";
+import SmartInsightsCards from "@/components/SmartInsightsCards";
 
 interface ShiftRow {
   date: string;
@@ -28,17 +30,10 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<{ username: string; tax_rate: number; insurance_rate: number } | null>(null);
   const [showAddShift, setShowAddShift] = useState(false);
   const [rawShifts, setRawShifts] = useState<ShiftRow[]>([]);
-  const [expenses, setExpenses] = useState<{ category: string; amount: number }[]>([]);
+  const [expenses, setExpenses] = useState<{ category: string; amount: number; date: string }[]>([]);
   const [stats, setStats] = useState({
-    totalEarnings: 0,
-    avgHourlyRate: 0,
-    tips: 0,
-    wage: 0,
-    premiums: 0,
-    netEstimated: 0,
-    netPercentage: 77,
-    todayShiftTime: "--:--",
-    todayForecast: 0,
+    totalEarnings: 0, avgHourlyRate: 0, tips: 0, wage: 0, premiums: 0,
+    netEstimated: 0, netPercentage: 77, todayShiftTime: "--:--", todayForecast: 0,
   });
 
   const calcHours = (s: ShiftRow) => {
@@ -56,15 +51,11 @@ const Dashboard = () => {
     const [profileRes, shiftsRes, expensesRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
       supabase.from("shifts").select("*, jobs(hourly_rate, name)").eq("user_id", user.id),
-      supabase.from("expenses").select("category, amount").eq("user_id", user.id),
+      supabase.from("expenses").select("category, amount, date").eq("user_id", user.id),
     ]);
 
     if (profileRes.data) {
-      setProfile({
-        username: profileRes.data.username,
-        tax_rate: profileRes.data.tax_rate || 0,
-        insurance_rate: profileRes.data.insurance_rate || 0,
-      });
+      setProfile({ username: profileRes.data.username, tax_rate: profileRes.data.tax_rate || 0, insurance_rate: profileRes.data.insurance_rate || 0 });
     }
 
     if (expensesRes.data) setExpenses(expensesRes.data);
@@ -75,8 +66,7 @@ const Dashboard = () => {
     if (shifts.length > 0) {
       let totalWage = 0, totalTips = 0, totalPremiums = 0, totalHours = 0;
       const today = new Date().toISOString().split("T")[0];
-      let todayStart = "";
-      let todayEarnings = 0;
+      let todayStart = "", todayEarnings = 0;
 
       for (const s of shifts) {
         const workHrs = calcHours(s);
@@ -86,7 +76,6 @@ const Dashboard = () => {
         totalTips += s.tips || 0;
         totalPremiums += s.premiums || 0;
         totalHours += workHrs;
-
         if (s.date === today) {
           todayStart = s.start_time.substring(0, 5);
           todayEarnings += shiftWage + (s.tips || 0) + (s.premiums || 0);
@@ -99,56 +88,49 @@ const Dashboard = () => {
       const net = total * (1 - taxRate - insRate);
 
       setStats({
-        totalEarnings: total,
-        avgHourlyRate: totalHours > 0 ? total / totalHours : 0,
-        tips: totalTips,
-        wage: totalWage,
-        premiums: totalPremiums,
-        netEstimated: net,
-        netPercentage: total > 0 ? Math.round((net / total) * 100) : 0,
-        todayShiftTime: todayStart || "--:--",
-        todayForecast: todayEarnings,
+        totalEarnings: total, avgHourlyRate: totalHours > 0 ? total / totalHours : 0,
+        tips: totalTips, wage: totalWage, premiums: totalPremiums,
+        netEstimated: net, netPercentage: total > 0 ? Math.round((net / total) * 100) : 0,
+        todayShiftTime: todayStart || "--:--", todayForecast: todayEarnings,
       });
     }
   }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Chart data
-  const chartShifts = useMemo(() => {
-    return rawShifts.map((s) => {
-      const workHrs = calcHours(s);
-      const rate = s.jobs?.hourly_rate || 0;
-      return {
-        date: s.date,
-        wage: workHrs * rate,
-        tips: s.tips || 0,
-        premiums: s.premiums || 0,
-      };
-    });
-  }, [rawShifts]);
+  const chartShifts = useMemo(() => rawShifts.map((s) => {
+    const workHrs = calcHours(s);
+    const rate = s.jobs?.hourly_rate || 0;
+    return { date: s.date, wage: workHrs * rate, tips: s.tips || 0, premiums: s.premiums || 0 };
+  }), [rawShifts]);
 
-  // Forecast
+  const earningsForBalance = useMemo(() => chartShifts.map((s) => ({
+    date: s.date, amount: s.wage + s.tips + s.premiums,
+  })), [chartShifts]);
+
+  const expensesForBalance = useMemo(() => expenses.map((e) => ({
+    date: e.date, amount: e.amount,
+  })), [expenses]);
+
+  const insightShifts = useMemo(() => rawShifts.map((s) => {
+    const hours = calcHours(s);
+    const rate = s.jobs?.hourly_rate || 0;
+    return { date: s.date, hours, earnings: hours * rate + (s.tips || 0) + (s.premiums || 0), jobName: s.jobs?.name || "Unknown" };
+  }), [rawShifts]);
+
   const forecast = useMemo(() => {
     const now = new Date();
-    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
-
-    let weekTotal = 0, monthTotal = 0, weekCount = 0, monthCount = 0;
-
+    const ws = startOfWeek(now, { weekStartsOn: 1 }), we = endOfWeek(now, { weekStartsOn: 1 });
+    const ms = startOfMonth(now), me = endOfMonth(now);
+    let wt = 0, mt = 0, wc = 0, mc = 0;
     for (const s of rawShifts) {
       const d = parseISO(s.date);
       const workHrs = calcHours(s);
-      const rate = s.jobs?.hourly_rate || 0;
-      const total = workHrs * rate + (s.tips || 0) + (s.premiums || 0);
-
-      if (d >= weekStart && d <= weekEnd) { weekTotal += total; weekCount++; }
-      if (d >= monthStart && d <= monthEnd) { monthTotal += total; monthCount++; }
+      const total = workHrs * (s.jobs?.hourly_rate || 0) + (s.tips || 0) + (s.premiums || 0);
+      if (d >= ws && d <= we) { wt += total; wc++; }
+      if (d >= ms && d <= me) { mt += total; mc++; }
     }
-
-    return { weeklyForecast: weekTotal, monthlyForecast: monthTotal, scheduledShiftsThisWeek: weekCount, scheduledShiftsThisMonth: monthCount };
+    return { weeklyForecast: wt, monthlyForecast: mt, scheduledShiftsThisWeek: wc, scheduledShiftsThisMonth: mc };
   }, [rawShifts]);
 
   const greeting = () => {
@@ -167,11 +149,9 @@ const Dashboard = () => {
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
               <Icon icon="mdi:account" className="w-5 h-5 text-primary" />
             </div>
-            <div>
-              <p className="text-body text-foreground font-medium">
-                {greeting()}, {profile?.username || "User"}
-              </p>
-            </div>
+            <p className="text-body text-foreground font-medium">
+              {greeting()}, {profile?.username || "User"}
+            </p>
           </div>
           <div className="flex gap-2">
             <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl active:scale-95 transition-transform">
@@ -183,30 +163,17 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Earnings */}
-        <EarningsSummaryCard
-          totalEarnings={stats.totalEarnings}
-          avgHourlyRate={stats.avgHourlyRate}
-          tips={stats.tips}
-          wage={stats.wage}
-          premiums={stats.premiums}
-          netEstimated={stats.netEstimated}
-          netPercentage={stats.netPercentage}
-        />
+        <EarningsSummaryCard totalEarnings={stats.totalEarnings} avgHourlyRate={stats.avgHourlyRate} tips={stats.tips} wage={stats.wage} premiums={stats.premiums} netEstimated={stats.netEstimated} netPercentage={stats.netPercentage} />
 
-        {/* Forecast */}
-        <ForecastCard
-          weeklyForecast={forecast.weeklyForecast}
-          monthlyForecast={forecast.monthlyForecast}
-          scheduledShiftsThisWeek={forecast.scheduledShiftsThisWeek}
-          scheduledShiftsThisMonth={forecast.scheduledShiftsThisMonth}
-        />
+        <ForecastCard weeklyForecast={forecast.weeklyForecast} monthlyForecast={forecast.monthlyForecast} scheduledShiftsThisWeek={forecast.scheduledShiftsThisWeek} scheduledShiftsThisMonth={forecast.scheduledShiftsThisMonth} />
 
-        {/* Charts */}
+        <SmartInsightsCards shifts={insightShifts} />
+
+        <BalanceTrendChart earnings={earningsForBalance} expenses={expensesForBalance} />
         <EarningsChart shifts={chartShifts} />
         <ExpensePieChart expenses={expenses} />
 
-        {/* Today Section */}
+        {/* Today */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Icon icon="mdi:calendar-today" className="w-5 h-5 text-muted-foreground" />
@@ -222,21 +189,15 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Upcoming Events */}
         <UpcomingEventsCard />
 
-        {/* Floating Buttons */}
         <div className="fixed bottom-24 lg:bottom-8 right-4 lg:right-auto lg:left-1/2 lg:translate-x-[200px] flex gap-3 z-40">
           <FloatingActionButton icon="mdi:calendar" onClick={() => {}} />
           <FloatingActionButton icon="mdi:plus" onClick={() => setShowAddShift(true)} />
         </div>
       </div>
 
-      <AddShiftDialog
-        open={showAddShift}
-        onClose={() => setShowAddShift(false)}
-        onAdded={fetchData}
-      />
+      <AddShiftDialog open={showAddShift} onClose={() => setShowAddShift(false)} onAdded={fetchData} />
     </AppLayout>
   );
 };
