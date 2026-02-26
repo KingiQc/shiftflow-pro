@@ -141,3 +141,11 @@
     text-wrap: balance;
   }
 }
+
+/* Mobile touch feedback */
+@media (hover: none) {
+  .glass-card-hover:active {
+    transform: scale(0.97);
+    transition: transform 0.1s ease;
+  }
+}
