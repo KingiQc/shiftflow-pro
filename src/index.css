@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 3%;
+    --background: 0 0% 0%;
     --foreground: 0 0% 95%;
 
     --card: 0 0% 6%;
@@ -107,8 +107,8 @@
   .gradient-bg {
     background: radial-gradient(
       ellipse at top center,
-      hsla(var(--glow-primary) / 0.15) 0%,
-      hsla(0, 0%, 0%, 1) 70%
+      hsla(var(--glow-primary) / 0.12) 0%,
+      hsl(0, 0%, 0%) 60%
     );
   }
 
