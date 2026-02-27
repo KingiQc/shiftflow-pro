@@ -39,7 +39,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-body font-medium transition-all duration-200 ${
                     isActive
                       ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      : "text-foreground hover:text-foreground hover:bg-secondary/50"
                   }`}
                 >
                   <Icon icon={item.icon} className="w-5 h-5" />
@@ -51,7 +51,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
 
           <button
             onClick={signOut}
-            className="flex items-center gap-3 px-4 py-3 text-muted-foreground hover:text-destructive transition-colors text-body"
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:text-destructive transition-colors text-body"
           >
             <Icon icon="mdi:logout" className="w-5 h-5" />
             <span>Sign Out</span>
@@ -74,7 +74,7 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  isActive ? "text-primary" : "text-foreground"
                 }`}
               >
                 <Icon icon={item.icon} className="w-5 h-5" />
