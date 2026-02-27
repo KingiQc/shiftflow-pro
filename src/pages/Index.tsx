@@ -15,6 +15,7 @@ import ForecastCard from "@/components/ForecastCard";
 import BalanceTrendChart from "@/components/BalanceTrendChart";
 import SmartInsightsCards from "@/components/SmartInsightsCards";
 import LiveShiftTimer from "@/components/LiveShiftTimer";
+import useShiftNotifications from "@/hooks/use-shift-notifications";
 
 interface ShiftRow {
   date: string;
@@ -28,6 +29,7 @@ interface ShiftRow {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  useShiftNotifications();
   const [profile, setProfile] = useState<{ username: string; tax_rate: number; insurance_rate: number } | null>(null);
   const [showAddShift, setShowAddShift] = useState(false);
   const [rawShifts, setRawShifts] = useState<ShiftRow[]>([]);
@@ -156,10 +158,10 @@ const Dashboard = () => {
           </div>
           <div className="flex gap-2">
             <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl active:scale-95 transition-transform">
-              <Icon icon="mdi:gift-outline" className="w-5 h-5 text-muted-foreground" />
+              <Icon icon="mdi:gift-outline" className="w-5 h-5 text-foreground" />
             </button>
             <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl active:scale-95 transition-transform">
-              <Icon icon="mdi:binoculars" className="w-5 h-5 text-muted-foreground" />
+              <Icon icon="mdi:binoculars" className="w-5 h-5 text-foreground" />
             </button>
           </div>
         </div>
@@ -179,7 +181,7 @@ const Dashboard = () => {
         {/* Today */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Icon icon="mdi:calendar-today" className="w-5 h-5 text-muted-foreground" />
+            <Icon icon="mdi:calendar-today" className="w-5 h-5 text-foreground" />
             <div>
               <p className="text-body font-semibold text-foreground">Today</p>
               <p className="text-caption text-muted-foreground">Quick overview</p>

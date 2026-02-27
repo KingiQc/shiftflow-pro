@@ -46,7 +46,7 @@ const ShiftCard = ({
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: jobColor }} />
             <span className="text-caption text-primary font-medium">{jobName}</span>
           </div>
-          <Icon icon="mdi:chevron-right" className="w-5 h-5 text-muted-foreground" />
+          <Icon icon="mdi:chevron-right" className="w-5 h-5 text-foreground" />
         </div>
 
         <h3 className="text-section-title font-semibold text-foreground mb-3">{shiftName}</h3>

@@ -17,7 +17,7 @@ const ForecastCard = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-1">
-        <Icon icon="mdi:chart-timeline-variant" className="w-5 h-5 text-muted-foreground" />
+        <Icon icon="mdi:chart-timeline-variant" className="w-5 h-5 text-foreground" />
         <p className="text-body font-semibold text-foreground">Forecast</p>
       </div>
       <div className="grid grid-cols-2 gap-3">

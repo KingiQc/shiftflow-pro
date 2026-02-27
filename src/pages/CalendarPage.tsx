@@ -75,10 +75,10 @@ const CalendarPage = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl">
-                <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-muted-foreground" />
+                <Icon icon="mdi:format-list-bulleted" className="w-5 h-5 text-foreground" />
               </button>
               <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl">
-                <Icon icon="mdi:filter-variant" className="w-5 h-5 text-muted-foreground" />
+                <Icon icon="mdi:filter-variant" className="w-5 h-5 text-foreground" />
               </button>
             </div>
             <div className="text-center">
@@ -88,7 +88,7 @@ const CalendarPage = () => {
               <p className="text-caption text-primary">{totalShifts} Shifts · {totalHours.toFixed(1)} hrs</p>
             </div>
             <button className="glass-card w-10 h-10 flex items-center justify-center rounded-xl">
-              <Icon icon="mdi:calendar-plus" className="w-5 h-5 text-muted-foreground" />
+              <Icon icon="mdi:calendar-plus" className="w-5 h-5 text-foreground" />
             </button>
           </div>
           <WeekCalendar selectedDate={selectedDate} onSelectDate={setSelectedDate} shiftDates={allShiftDates} />
@@ -122,7 +122,7 @@ const CalendarPage = () => {
           </div>
         ) : (
           <div className="glass-card p-8 text-center">
-            <Icon icon="mdi:calendar-blank" className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <Icon icon="mdi:calendar-blank" className="w-12 h-12 text-foreground mx-auto mb-3" />
             <p className="text-body text-muted-foreground">No shifts on this day</p>
             <button
               onClick={() => setShowAddShift(true)}
@@ -133,17 +133,14 @@ const CalendarPage = () => {
           </div>
         )}
 
-        {/* Templates */}
+        {/* Templates - Quick Apply */}
         {templates.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Icon icon="mdi:bookmark" className="w-5 h-5 text-primary" />
-                <span className="text-body font-semibold text-foreground">Add from Template</span>
+                <span className="text-body font-semibold text-foreground">Quick Apply Template</span>
               </div>
-              <button className="text-primary text-caption font-medium flex items-center gap-1">
-                All <Icon icon="mdi:chevron-right" className="w-4 h-4" />
-              </button>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {templates.map((t) => (
@@ -152,7 +149,23 @@ const CalendarPage = () => {
                   name={t.template_name || "Template"}
                   startTime={t.start_time.substring(0, 5)}
                   hours={calcShiftHours(t.start_time, t.end_time, t.break_minutes || 0)}
-                  onClick={() => {}}
+                  onClick={async () => {
+                    if (!user) return;
+                    const dateStr = format(selectedDate, "yyyy-MM-dd");
+                    const { error } = await supabase.from("shifts").insert({
+                      user_id: user.id,
+                      job_id: (t as any).job_id,
+                      date: dateStr,
+                      start_time: t.start_time,
+                      end_time: t.end_time,
+                      break_minutes: t.break_minutes || 0,
+                      tips: t.tips || 0,
+                      premiums: t.premiums || 0,
+                    });
+                    if (!error) {
+                      fetchShifts();
+                    }
+                  }}
                 />
               ))}
             </div>

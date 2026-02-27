@@ -23,7 +23,7 @@ const UpcomingEventsCard = () => {
         </div>
         <Icon
           icon="mdi:chevron-up"
-          className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${expanded ? "" : "rotate-180"}`}
+          className={`w-5 h-5 text-foreground transition-transform duration-200 ${expanded ? "" : "rotate-180"}`}
         />
       </GlassCard>
 
