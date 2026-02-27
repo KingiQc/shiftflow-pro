@@ -14,6 +14,7 @@ import ExpensePieChart from "@/components/ExpensePieChart";
 import ForecastCard from "@/components/ForecastCard";
 import BalanceTrendChart from "@/components/BalanceTrendChart";
 import SmartInsightsCards from "@/components/SmartInsightsCards";
+import LiveShiftTimer from "@/components/LiveShiftTimer";
 
 interface ShiftRow {
   date: string;
@@ -162,6 +163,8 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
+
+        <LiveShiftTimer />
 
         <EarningsSummaryCard totalEarnings={stats.totalEarnings} avgHourlyRate={stats.avgHourlyRate} tips={stats.tips} wage={stats.wage} premiums={stats.premiums} netEstimated={stats.netEstimated} netPercentage={stats.netPercentage} />
 
